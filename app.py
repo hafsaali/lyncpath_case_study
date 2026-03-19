@@ -14,8 +14,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Read API key — Streamlit Cloud uses st.secrets, local uses .env
+
 from pdf_utils import extract_text_from_pdf, get_pdf_metadata
-from agents import build_agent1, build_agent2, run_agent1, run_agent2
+from agents import build_agent1, build_agent2, run_agent1, run_agent2, _safe_json
 from data import MOCK_TRACKING_PAYLOAD
 
 # ── page config ────────────────────────────────────────────────────────────────
@@ -152,17 +154,16 @@ with st.sidebar:
     st.markdown("**D&D Prevention Agent**")
     st.markdown("---")
 
-    groq_key = st.text_input(
-        "Groq API Key",
-        type="password",
-        value=os.getenv("GROQ_API_KEY", ""),
-        placeholder="gsk_...",
-        help="Free key from https://console.groq.com — no billing required",
-    )
+    # API key loaded from .env only — not exposed in UI
+    groq_key = os.getenv("GROQ_API_KEY", "")
     if groq_key:
         st.session_state["gemini_key"] = groq_key
     elif "gemini_key" not in st.session_state:
         st.session_state["gemini_key"] = ""
+
+    if not st.session_state.get("gemini_key"):
+        st.error("⚠️ GROQ_API_KEY not found. Add it to your .env file and restart.")
+        st.stop()
 
     st.markdown("---")
     st.markdown("**Upload Booking Document**")
